@@ -4,6 +4,9 @@ public class Trip {
     private long id;
     private String name;
 
+    public Trip() {
+    }
+
     public Trip(long id, String name) {
         this.id = id;
         this.name = name;
