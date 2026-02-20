@@ -8,6 +8,9 @@ public class Expense {
     private String category;
     private long tripId;
 
+    public Expense() {
+    }
+
     public Expense(long id, String description, double amount, String currency, String category, long tripId) {
         this.id = id;
         this.description = description;
