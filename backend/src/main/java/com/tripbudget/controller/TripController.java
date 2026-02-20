@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 @RequestMapping("/api/trips")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class TripController {
 
     private final List<Trip> trips = new ArrayList<>();
