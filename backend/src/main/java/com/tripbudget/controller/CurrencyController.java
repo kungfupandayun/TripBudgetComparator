@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // Allow all origins for simplicity in this prototype
+@CrossOrigin(origins = "http://localhost:3000")
 public class CurrencyController {
 
     private final WebClient webClient;
@@ -31,8 +32,8 @@ public class CurrencyController {
     }
 
     @GetMapping("/rates")
-    public Mono<Map<String, Double>> getRates() {
-        return this.webClient.get().uri("/latest?from=SGD")
+    public Mono<Map<String, Double>> getRates(@RequestParam(defaultValue = "SGD") String baseCurrency) {
+        return this.webClient.get().uri("/latest?from=" + baseCurrency)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .map(response -> {
@@ -42,7 +43,7 @@ public class CurrencyController {
                                     Map.Entry::getKey,
                                     entry -> entry.getValue().doubleValue()
                             ));
-                    rates.put("SGD", 1.0);
+                    rates.put(baseCurrency, 1.0);
                     return rates;
                 });
     }
