@@ -13,6 +13,7 @@ function Expenses() {
     const [trips, setTrips] = useState([]);
     const [selectedTripId, setSelectedTripId] = useState('');
     const [newTripName, setNewTripName] = useState('');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         // Fetch currencies
@@ -21,13 +22,19 @@ function Expenses() {
             .then(data => {
                 setCurrencies(data);
             })
-            .catch(error => console.error('Error fetching currencies:', error));
+            .catch(error => {
+                console.error('Error fetching currencies:', error);
+                setError('Failed to load currencies.');
+            });
         
         // Fetch rates
         fetch('http://localhost:8081/api/rates')
             .then(response => response.json())
             .then(data => setRates(data))
-            .catch(error => console.error('Error fetching rates:', error));
+            .catch(error => {
+                console.error('Error fetching rates:', error);
+                setError('Failed to load exchange rates.');
+            });
 
         // Fetch trips
         fetch('http://localhost:8081/api/trips')
@@ -38,7 +45,10 @@ function Expenses() {
                     setSelectedTripId(data[0].id); // Select the first trip by default
                 }
             })
-            .catch(error => console.error('Error fetching trips:', error));
+            .catch(error => {
+                console.error('Error fetching trips:', error);
+                setError('Failed to load trips.');
+            });
 
     }, []);
 
@@ -50,7 +60,10 @@ function Expenses() {
                 .then(data => {
                     setExpenses(data);
                 })
-                .catch(error => console.error('Error fetching expenses:', error));
+                .catch(error => {
+                    console.error('Error fetching expenses:', error);
+                    setError('Failed to load expenses.');
+                });
         } else {
             setExpenses([]); // Clear expenses if no trip is selected
         }
@@ -58,16 +71,26 @@ function Expenses() {
 
     const handleAddExpense = (e) => {
         e.preventDefault();
+        setError('');
+        
+        const amountNum = parseFloat(amount);
+        
         if (!description || !amount || !selectedTripId) {
-            alert('Please fill in description, amount, and select a trip.');
+            setError('Please fill in description, amount, and select a trip.');
             return;
         }
+        
+        if (amountNum <= 0) {
+            setError('Amount must be greater than 0.');
+            return;
+        }
+        
         const newExpense = {
             description,
-            amount: parseFloat(amount),
+            amount: amountNum,
             currency,
             category,
-            tripId: selectedTripId,
+            tripId: parseInt(selectedTripId),
         };
 
         fetch('http://localhost:8081/api/expenses', {
@@ -84,7 +107,10 @@ function Expenses() {
                 setDescription('');
                 setAmount('');
             })
-            .catch(error => console.error('Error adding expense:', error));
+            .catch(error => {
+                console.error('Error adding expense:', error);
+                setError('Failed to add expense. Please try again.');
+            });
     };
 
     const handleDeleteExpense = (id) => {
@@ -94,15 +120,22 @@ function Expenses() {
             .then(response => {
                 if (response.ok) {
                     setExpenses(expenses.filter(expense => expense.id !== id));
+                } else {
+                    setError('Failed to delete expense.');
                 }
             })
-            .catch(error => console.error('Error deleting expense:', error));
+            .catch(error => {
+                console.error('Error deleting expense:', error);
+                setError('Failed to delete expense. Please try again.');
+            });
     };
 
     const handleCreateTrip = (e) => {
         e.preventDefault();
+        setError('');
+        
         if (!newTripName) {
-            alert('Please enter a trip name.');
+            setError('Please enter a trip name.');
             return;
         }
 
@@ -119,7 +152,10 @@ function Expenses() {
                 setSelectedTripId(data.id); // Select the newly created trip
                 setNewTripName('');
             })
-            .catch(error => console.error('Error creating trip:', error));
+            .catch(error => {
+                console.error('Error creating trip:', error);
+                setError('Failed to create trip. Please try again.');
+            });
     };
 
     const getConvertedAmount = (expense) => {
@@ -140,6 +176,8 @@ function Expenses() {
                 <h1>Manage Your Trips & Expenses</h1>
             </header>
             <main>
+                {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+                
                 <div className="trip-management-section">
                     <div className="input-group">
                         <label htmlFor="new-trip-name">New Trip Name:</label>
@@ -157,7 +195,7 @@ function Expenses() {
                         <select id="select-trip" value={selectedTripId} onChange={(e) => setSelectedTripId(e.target.value)}>
                             <option value="">-- Select a Trip --</option>
                             {trips.map(trip => (
-                                <option key={trip.id} value={trip.id}>{trip.name}</option>
+                                <option key={trip.id} value={trip.id}>{trip.id}</option>
                             ))}
                         </select>
                     </div>
@@ -178,6 +216,8 @@ function Expenses() {
                         <input
                             id="amount"
                             type="number"
+                            min="0.01"
+                            step="0.01"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                         />
@@ -202,7 +242,7 @@ function Expenses() {
                 </form>
 
                 <div className="results">
-                    <h2>Expenses for {trips.find(t => t.id == selectedTripId)?.name || 'Selected Trip'}:</h2>
+                    <h2>Expenses for {trips.find(t => t.id === parseInt(selectedTripId))?.name || 'Selected Trip'}:</h2>
                     <div className="input-group">
                         <label htmlFor="convert-to">Convert to:</label>
                         <select id="convert-to" value={convertToCurrency} onChange={(e) => setConvertToCurrency(e.target.value)}>
